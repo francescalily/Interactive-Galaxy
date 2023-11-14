@@ -21,8 +21,19 @@ const parameters = {};
 parameters.count = 1000;
 parameters.size = 0.02;
 
+//have to use null because otherwise the parameters will not be destroyed
+let geometry = null;
+let material = null;
+let points = null;
+
 const generateGalaxy = () => {
-  const geometry = new THREE.BufferGeometry(); //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
+  //gets rid of galaxy when something in there
+  if (points !== null) {
+    geometry.dispose();
+    material.dispose();
+    scene.remove(points);
+  }
+  geometry = new THREE.BufferGeometry(); //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
   const positions = new Float32Array(parameters.count * 3); //new array to store positions - *3 because each vertex in 3d space x y z
 
   for (let i = 0; i < parameters.count; i++) {
@@ -34,7 +45,7 @@ const generateGalaxy = () => {
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
 
   //now making the material (points way of making particles)
-  const material = new THREE.PointsMaterial({
+  material = new THREE.PointsMaterial({
     size: parameters.size,
     sizeAttenuation: true,
     depthWrite: false,
@@ -42,11 +53,24 @@ const generateGalaxy = () => {
   });
 
   //making points
-  const points = new THREE.Points(geometry, material);
+  points = new THREE.Points(geometry, material);
   scene.add(points);
 };
 
 generateGalaxy();
+
+gui
+  .add(parameters, "count")
+  .min(100)
+  .max(10000)
+  .step(100)
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "size")
+  .min(0.001)
+  .max(0.1)
+  .step(0.001)
+  .onFinishChange(generateGalaxy); //onFinishChange means it will change the galaxy when the user lets go of using the slider
 
 /**
  * Sizes
