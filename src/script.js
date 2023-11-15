@@ -2,16 +2,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
-/**
- * Base
- */
-// Debug
 const gui = new GUI();
 
-// Canvas
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
 const scene = new THREE.Scene();
 
 //galaxy
@@ -22,6 +16,7 @@ parameters.count = 100000;
 parameters.size = 0.001;
 parameters.radius = 5;
 parameters.branches = 3;
+parameters.spin = 1;
 
 //have to use null because otherwise the parameters will not be destroyed
 let geometry = null;
@@ -42,12 +37,13 @@ const generateGalaxy = () => {
     const i3 = i * 3; //so every three positions in the array corresponds to one vertex
 
     const radius = Math.random() * parameters.radius;
+    const spinAngle = radius * parameters.spin;
     const branchAngle =
       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    positions[i3 + 0] = Math.cos(branchAngle) * radius; // does x
+    positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius; // does x
     positions[i3 + 1] = 0; //does y coordinate
-    positions[i3 + 2] = Math.sin(branchAngle) * radius; //does z coordinate of the vertex
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius; //does z coordinate of the vertex
   }
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
 
@@ -91,6 +87,13 @@ gui
   .min(2)
   .max(20)
   .step(1)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "spin")
+  .min(-5)
+  .max(5)
+  .step(0.001)
   .onFinishChange(generateGalaxy);
 
 /**
