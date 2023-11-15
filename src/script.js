@@ -16,7 +16,7 @@ const textureLoader = new THREE.TextureLoader();
 //need an object to add tweaks to gui
 const parameters = {};
 parameters.pointDensity = 10;
-parameters.count = 100000;
+// parameters.count = 100000;
 parameters.size = 0.01;
 parameters.radius = 5;
 parameters.branches = 3;
@@ -69,8 +69,7 @@ const generateGalaxy = () => {
     // Create particle material
     particleMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: parameters.size, // Adjust particle size as needed
-      // map: particleTexture, // Optional texture for particles
+      size: parameters.size,
       transparent: true,
       blending: THREE.AdditiveBlending,
     });
@@ -88,12 +87,6 @@ const generateGalaxy = () => {
 };
 generateGalaxy();
 
-gui
-  .add(parameters, "count")
-  .min(100)
-  .max(100000)
-  .step(100)
-  .onFinishChange(generateGalaxy);
 gui
   .add(parameters, "size")
   .min(0.001)
