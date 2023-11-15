@@ -31,7 +31,9 @@ const generateGalaxy = () => {
     material.dispose();
     scene.remove(points);
   }
-  geometry = new THREE.BufferGeometry(); //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
+  geometry = new THREE.BufferGeometry();
+
+  //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
   const positions = new Float32Array(parameters.count * 3); //new array to store positions - *3 because each vertex in 3d space x y z
 
   for (let i = 0; i < parameters.count; i++) {
@@ -54,6 +56,7 @@ const generateGalaxy = () => {
 
   //now making the material (points way of making particles)
   material = new THREE.PointsMaterial({
+    color: 0x000000,
     size: parameters.size,
     sizeAttenuation: true,
     depthWrite: false,
@@ -157,6 +160,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0xffffff, 0);
 
 /**
  * Animate
