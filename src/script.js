@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { SVGLoader } from "three/addons/loaders/SVGLoader.js";
 import GUI from "lil-gui";
 
 const gui = new GUI();
@@ -7,9 +8,61 @@ const gui = new GUI();
 const canvas = document.querySelector("canvas.webgl");
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
 const textureLoader = new THREE.TextureLoader();
-const particleTexture = textureLoader.load("./textures/particles/pdLogo.png");
+// const particleTexture = textureLoader.load("./textures/particles/pdLogo.png");
+
+const loader = new SVGLoader();
+
+// load a SVG resource
+loader.load(
+  // resource URL
+  "./textures/particles/pdLogo.svg",
+  // called when the resource is loaded
+  function (data) {
+    const paths = data.paths;
+    const group = new THREE.Group();
+    console.log(data);
+
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+
+      const shapes = SVGLoader.createShapes(path);
+      console.log(path);
+
+      for (let j = 0; j < shapes.length; j++) {
+        const shape = shapes[j];
+        const geometry = new THREE.ShapeGeometry(shape);
+        const mesh = new THREE.Mesh(geometry, material);
+        group.add(mesh);
+      }
+    }
+
+    scene.add(group);
+    group.position.set(0, 0, 0);
+    group.scale.set(0.0005, 0.0005, 0.0005);
+    const box = new THREE.Box3().setFromObject(group);
+    const center = box.getCenter(new THREE.Vector3());
+    group.position.x += group.position.x - center.x;
+    group.position.y += group.position.y - center.y;
+    group.position.z += group.position.z - center.z; // Adjust scaling if necessary
+  },
+  // called when loading is in progresses
+  function (xhr) {
+    console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+  },
+  // called when loading has errors
+  function (error) {
+    console.log("An error happened");
+  }
+);
 
 //galaxy
 
@@ -26,9 +79,9 @@ parameters.insideColor = "#93F23A";
 parameters.outsideColor = "#C70C00";
 
 //have to use null because otherwise the parameters will not be destroyed
-let geometry = null;
-let material = null;
-let points = null;
+// let geometry = null;
+// let material = null;
+// let points = null;
 
 const generateGalaxy = () => {
   //gets rid of galaxy when something in there
@@ -68,7 +121,7 @@ const generateGalaxy = () => {
 
   //now making the material (points way of making particles)
   material = new THREE.PointsMaterial({
-    color: 0x000000,
+    // color: 0x000000,
     transparent: true,
     //map: particleTexture,
     size: parameters.size,
@@ -82,7 +135,7 @@ const generateGalaxy = () => {
   scene.add(points);
 };
 
-generateGalaxy();
+// generateGalaxy();
 
 gui
   .add(parameters, "count")
@@ -171,7 +224,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(0xffffff, 0);
+// renderer.setClearColor(0xffffff, 0);
 
 const clock = new THREE.Clock();
 
