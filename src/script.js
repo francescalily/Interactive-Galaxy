@@ -16,23 +16,50 @@ const textureLoader = new THREE.TextureLoader();
 const loader = new SVGLoader();
 
 // load a SVG resource
-loader.load(
+let pdGeometry = loader.load(
   // resource URL
   "./textures/particles/pdLogo.svg",
   // called when the resource is loaded
   function (data) {
     const paths = data.paths;
+    const particles = [];
     const group = new THREE.Group();
+    console.log("group", group);
     console.log(data);
 
     for (let i = 0; i < paths.length; i++) {
       const path = paths[i];
 
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        side: THREE.DoubleSide,
-        depthWrite: false,
+      const points = path.subPaths
+        .flatMap((subPath) => subPath.getPoints())
+        .filter((point) => !isNaN(point.x) && !isNaN(point.y));
+      particles.push(...points);
+
+      const particleGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(points.length * 3);
+      points.forEach((point, i) => {
+        positions[i * 3] = point.x;
+        positions[i * 3 + 1] = point.y;
+        positions[i * 3 + 2] = 0;
       });
+      particleGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3)
+      );
+      console.log("points", points);
+      console.log("particles", particles);
+      console.log("positions", positions);
+
+      const material = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.1,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+      });
+
+      const particleMesh = new THREE.Points(particleGeometry, material);
+
+      scene.add(particleMesh);
 
       const shapes = SVGLoader.createShapes(path);
       console.log(path);
@@ -46,7 +73,7 @@ loader.load(
     }
 
     scene.add(group);
-    group.position.set(0, 0, 0);
+    //group.position.set(0, 0, 0);
     group.scale.set(0.0005, 0.0005, 0.0005);
     const box = new THREE.Box3().setFromObject(group);
     const center = box.getCenter(new THREE.Vector3());
@@ -60,7 +87,7 @@ loader.load(
   },
   // called when loading has errors
   function (error) {
-    console.log("An error happened");
+    console.log("An error happened", error);
   }
 );
 
@@ -79,9 +106,9 @@ parameters.insideColor = "#93F23A";
 parameters.outsideColor = "#C70C00";
 
 //have to use null because otherwise the parameters will not be destroyed
-// let geometry = null;
-// let material = null;
-// let points = null;
+let geometry = null;
+let material = null;
+let points = null;
 
 const generateGalaxy = () => {
   //gets rid of galaxy when something in there
@@ -135,7 +162,7 @@ const generateGalaxy = () => {
   scene.add(points);
 };
 
-// generateGalaxy();
+generateGalaxy();
 
 gui
   .add(parameters, "count")
