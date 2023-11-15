@@ -13,55 +13,190 @@ scene.background = new THREE.Color(0x000000);
 const textureLoader = new THREE.TextureLoader();
 // const particleTexture = textureLoader.load("./textures/particles/pdLogo.png");
 
-const loader = new SVGLoader();
-loader.load("./textures/particles/pdLogo.svg", function (data) {
-  const paths = data.paths;
-  const particles = [];
+//need an object to add tweaks to gui
+const parameters = {};
+parameters.pointDensity = 10;
+parameters.count = 100000;
+parameters.size = 0.01;
+parameters.radius = 5;
+parameters.branches = 3;
+parameters.spin = 1;
+parameters.randomness = 0.2;
+parameters.randomnessPower = 3;
+parameters.insideColor = "#93F23A";
+parameters.outsideColor = "#C70C00";
 
-  for (let i = 0; i < paths.length; i++) {
-    const path = paths[i];
+let particleGeometry = null;
+let particleMaterial = null;
+let particleMesh = null;
 
-    // Extract points from the path
-    const points = path.subPaths.flatMap(
-      (subPath) => subPath.getPoints() // Adjust the number of points as needed
-    );
-
-    // Add points to the particles array
-    particles.push(...points);
+const generateGalaxy = () => {
+  if (particleMesh !== null) {
+    particleGeometry.dispose();
+    particleMaterial.dispose();
+    scene.remove(particleMesh);
   }
+  const loader = new SVGLoader();
+  loader.load("./textures/particles/pdLogo.svg", function (data) {
+    const paths = data.paths;
+    const particles = [];
 
-  // Create particle geometry
-  const particleGeometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(particles.length * 3);
-  particles.forEach((point, i) => {
-    positions[i * 3] = point.x;
-    positions[i * 3 + 1] = point.y;
-    positions[i * 3 + 2] = 0; // z can be 0 or a small random value for depth
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+
+      // Extract points from the path
+      const points = path.subPaths.flatMap((subPath) =>
+        subPath.getPoints(parameters.pointDensity)
+      );
+
+      particles.push(...points);
+    }
+
+    // Create particle geometry
+    particleGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particles.length * 3);
+    particles.forEach((point, i) => {
+      positions[i * 3] = point.x;
+      positions[i * 3 + 1] = point.y;
+      positions[i * 3 + 2] = 0;
+    });
+    particleGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+    const radius = Math.random() * parameters.radius;
+
+    // Create particle material
+    particleMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: parameters.size, // Adjust particle size as needed
+      // map: particleTexture, // Optional texture for particles
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+    });
+
+    // Create particle mesh and add to the scene
+    particleMesh = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particleMesh);
+    particleMesh.scale.set(0.0005, 0.0005, 0.0005);
+    const box = new THREE.Box3().setFromObject(particleMesh);
+    const center = box.getCenter(new THREE.Vector3());
+    particleMesh.position.x += particleMesh.position.x - center.x;
+    particleMesh.position.y += particleMesh.position.y - center.y;
+    particleMesh.position.z += particleMesh.position.z - center.z;
   });
-  particleGeometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(positions, 3)
-  );
+};
+generateGalaxy();
 
-  // Create particle material
-  const particleMaterial = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.05, // Adjust particle size as needed
-    // map: particleTexture, // Optional texture for particles
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-  });
+gui
+  .add(parameters, "count")
+  .min(100)
+  .max(100000)
+  .step(100)
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "size")
+  .min(0.001)
+  .max(0.1)
+  .step(0.001)
+  .onFinishChange(generateGalaxy); //onFinishChange means it will change the galaxy when the user lets go of using the slider
 
-  // Create particle mesh and add to the scene
-  const particleMesh = new THREE.Points(particleGeometry, particleMaterial);
-  scene.add(particleMesh);
-  particleMesh.scale.set(0.0005, 0.0005, 0.0005);
-  const box = new THREE.Box3().setFromObject(particleMesh);
-  const center = box.getCenter(new THREE.Vector3());
-  particleMesh.position.x += particleMesh.position.x - center.x;
-  particleMesh.position.y += particleMesh.position.y - center.y;
-  particleMesh.position.z += particleMesh.position.z - center.z;
+gui
+  .add(parameters, "radius")
+  .min(0.01)
+  .max(20)
+  .step(0.01)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "branches")
+  .min(2)
+  .max(20)
+  .step(1)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "spin")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "randomness")
+  .min(0)
+  .max(2)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "randomnessPower")
+  .min(1)
+  .max(10)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui.add(parameters, "insideColor").onFinishChange(generateGalaxy);
+
+gui.add(parameters, "outsideColor").onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "pointDensity")
+  .min(1)
+  .max(200)
+  .step(1)
+  .onFinishChange(generateGalaxy);
+
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+
+window.addEventListener("resize", () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
+
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  100
+);
+camera.position.x = 3;
+camera.position.y = 3;
+camera.position.z = 3;
+scene.add(camera);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// renderer.setClearColor(0xffffff, 0);
+
+const clock = new THREE.Clock();
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+
+  controls.update();
+
+  renderer.render(scene, camera);
+
+  window.requestAnimationFrame(tick);
+};
+
+tick();
 
 // const loader = new SVGLoader();
 
@@ -143,176 +278,58 @@ loader.load("./textures/particles/pdLogo.svg", function (data) {
 
 //galaxy
 
-//need an object to add tweaks to gui
-const parameters = {};
-parameters.count = 100000;
-parameters.size = 0.01;
-parameters.radius = 5;
-parameters.branches = 3;
-parameters.spin = 1;
-parameters.randomness = 0.2;
-parameters.randomnessPower = 3;
-parameters.insideColor = "#93F23A";
-parameters.outsideColor = "#C70C00";
-
 //have to use null because otherwise the parameters will not be destroyed
-let geometry = null;
-let material = null;
-let points = null;
 
-const generateGalaxy = () => {
-  //gets rid of galaxy when something in there
-  if (points !== null) {
-    geometry.dispose();
-    material.dispose();
-    scene.remove(points);
-  }
-  geometry = new THREE.BufferGeometry();
+// const generateGalaxy = () => {
+//   //gets rid of galaxy when something in there
+//   if (points !== null) {
+//     geometry.dispose();
+//     material.dispose();
+//     scene.remove(points);
+//   }
+//   geometry = new THREE.BufferGeometry();
 
-  //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
-  const positions = new Float32Array(parameters.count * 3); //new array to store positions - *3 because each vertex in 3d space x y z
+//   //new instance of geometry - buffer geometry is a class that allows to manage/store geometry data eg vertex positions
+//   const positions = new Float32Array(parameters.count * 3); //new array to store positions - *3 because each vertex in 3d space x y z
 
-  for (let i = 0; i < parameters.count; i++) {
-    const i3 = i * 3; //so every three positions in the array corresponds to one vertex
+//   for (let i = 0; i < parameters.count; i++) {
+//     const i3 = i * 3; //so every three positions in the array corresponds to one vertex
 
-    const radius = Math.random() * parameters.radius;
-    const spinAngle = radius * parameters.spin;
-    const branchAngle =
-      ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+//     const radius = Math.random() * parameters.radius;
+//     const spinAngle = radius * parameters.spin;
+//     const branchAngle =
+//       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    const randomX =
-      Math.pow(Math.random(), parameters.randomnessPower) *
-      (Math.random() < 0.5 ? 1 : -1);
-    const randomY =
-      Math.pow(Math.random(), parameters.randomnessPower) *
-      (Math.random() < 0.5 ? 1 : -1);
-    const randomZ =
-      Math.pow(Math.random(), parameters.randomnessPower) *
-      (Math.random() < 0.5 ? 1 : -1);
+//     const randomX =
+//       Math.pow(Math.random(), parameters.randomnessPower) *
+//       (Math.random() < 0.5 ? 1 : -1);
+//     const randomY =
+//       Math.pow(Math.random(), parameters.randomnessPower) *
+//       (Math.random() < 0.5 ? 1 : -1);
+//     const randomZ =
+//       Math.pow(Math.random(), parameters.randomnessPower) *
+//       (Math.random() < 0.5 ? 1 : -1);
 
-    positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius + randomX; // does x
-    positions[i3 + 1] = randomY; //does y coordinate
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ; //does z coordinate of the vertex
-  }
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
+//     positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius + randomX; // does x
+//     positions[i3 + 1] = randomY; //does y coordinate
+//     positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ; //does z coordinate of the vertex
+//   }
+//   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
 
-  //now making the material (points way of making particles)
-  material = new THREE.PointsMaterial({
-    // color: 0x000000,
-    transparent: true,
-    //map: particleTexture,
-    size: parameters.size,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+//   //now making the material (points way of making particles)
+//   material = new THREE.PointsMaterial({
+//     // color: 0x000000,
+//     transparent: true,
+//     //map: particleTexture,
+//     size: parameters.size,
+//     sizeAttenuation: true,
+//     depthWrite: false,
+//     blending: THREE.AdditiveBlending,
+//   });
 
-  //making points
-  points = new THREE.Points(geometry, material);
-  scene.add(points);
-};
+//   //making points
+//   points = new THREE.Points(geometry, material);
+//   scene.add(points);
+// };
 
 // generateGalaxy();
-
-gui
-  .add(parameters, "count")
-  .min(100)
-  .max(100000)
-  .step(100)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "size")
-  .min(0.001)
-  .max(0.1)
-  .step(0.001)
-  .onFinishChange(generateGalaxy); //onFinishChange means it will change the galaxy when the user lets go of using the slider
-
-gui
-  .add(parameters, "radius")
-  .min(0.01)
-  .max(20)
-  .step(0.01)
-  .onFinishChange(generateGalaxy);
-
-gui
-  .add(parameters, "branches")
-  .min(2)
-  .max(20)
-  .step(1)
-  .onFinishChange(generateGalaxy);
-
-gui
-  .add(parameters, "spin")
-  .min(-5)
-  .max(5)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-
-gui
-  .add(parameters, "randomness")
-  .min(0)
-  .max(2)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-
-gui
-  .add(parameters, "randomnessPower")
-  .min(1)
-  .max(10)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-
-gui.add(parameters, "insideColor").onFinishChange(generateGalaxy);
-
-gui.add(parameters, "outsideColor").onFinishChange(generateGalaxy);
-
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
-
-window.addEventListener("resize", () => {
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
-
-const camera = new THREE.PerspectiveCamera(
-  75,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
-camera.position.x = 3;
-camera.position.y = 3;
-camera.position.z = 3;
-scene.add(camera);
-
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-
-const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-});
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-// renderer.setClearColor(0xffffff, 0);
-
-const clock = new THREE.Clock();
-
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-
-  controls.update();
-
-  renderer.render(scene, camera);
-
-  window.requestAnimationFrame(tick);
-};
-
-tick();
