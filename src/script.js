@@ -13,10 +13,11 @@ const scene = new THREE.Scene();
 //need an object to add tweaks to gui
 const parameters = {};
 parameters.count = 100000;
-parameters.size = 0.001;
+parameters.size = 0.01;
 parameters.radius = 5;
 parameters.branches = 3;
 parameters.spin = 1;
+parameters.randomness = 0.2;
 
 //have to use null because otherwise the parameters will not be destroyed
 let geometry = null;
@@ -41,9 +42,13 @@ const generateGalaxy = () => {
     const branchAngle =
       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius; // does x
-    positions[i3 + 1] = 0; //does y coordinate
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius; //does z coordinate of the vertex
+    const randomX = (Math.random() - 0.5) * parameters.randomness;
+    const randomY = (Math.random() - 0.5) * parameters.randomness;
+    const randomZ = (Math.random() - 0.5) * parameters.randomness;
+
+    positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius + randomX; // does x
+    positions[i3 + 1] = randomY; //does y coordinate
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ; //does z coordinate of the vertex
   }
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
 
@@ -93,6 +98,13 @@ gui
   .add(parameters, "spin")
   .min(-5)
   .max(5)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "randomness")
+  .min(0)
+  .max(2)
   .step(0.001)
   .onFinishChange(generateGalaxy);
 
