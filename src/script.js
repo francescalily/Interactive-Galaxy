@@ -14,82 +14,132 @@ const textureLoader = new THREE.TextureLoader();
 // const particleTexture = textureLoader.load("./textures/particles/pdLogo.png");
 
 const loader = new SVGLoader();
+loader.load("./textures/particles/pdLogo.svg", function (data) {
+  const paths = data.paths;
+  const particles = [];
 
-// load a SVG resource
-let pdGeometry = loader.load(
-  // resource URL
-  "./textures/particles/pdLogo.svg",
-  // called when the resource is loaded
-  function (data) {
-    const paths = data.paths;
-    const particles = [];
-    const group = new THREE.Group();
-    console.log("group", group);
-    console.log(data);
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i];
 
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
+    // Extract points from the path
+    const points = path.subPaths.flatMap(
+      (subPath) => subPath.getPoints() // Adjust the number of points as needed
+    );
 
-      const points = path.subPaths
-        .flatMap((subPath) => subPath.getPoints())
-        .filter((point) => !isNaN(point.x) && !isNaN(point.y));
-      particles.push(...points);
-
-      const particleGeometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(points.length * 3);
-      points.forEach((point, i) => {
-        positions[i * 3] = point.x;
-        positions[i * 3 + 1] = point.y;
-        positions[i * 3 + 2] = 0;
-      });
-      particleGeometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(positions, 3)
-      );
-      console.log("points", points);
-      console.log("particles", particles);
-      console.log("positions", positions);
-
-      const material = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 0.1,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-      });
-
-      const particleMesh = new THREE.Points(particleGeometry, material);
-
-      scene.add(particleMesh);
-
-      const shapes = SVGLoader.createShapes(path);
-      console.log(path);
-
-      for (let j = 0; j < shapes.length; j++) {
-        const shape = shapes[j];
-        const geometry = new THREE.ShapeGeometry(shape);
-        const mesh = new THREE.Mesh(geometry, material);
-        group.add(mesh);
-      }
-    }
-
-    scene.add(group);
-    //group.position.set(0, 0, 0);
-    group.scale.set(0.0005, 0.0005, 0.0005);
-    const box = new THREE.Box3().setFromObject(group);
-    const center = box.getCenter(new THREE.Vector3());
-    group.position.x += group.position.x - center.x;
-    group.position.y += group.position.y - center.y;
-    group.position.z += group.position.z - center.z; // Adjust scaling if necessary
-  },
-  // called when loading is in progresses
-  function (xhr) {
-    console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-  },
-  // called when loading has errors
-  function (error) {
-    console.log("An error happened", error);
+    // Add points to the particles array
+    particles.push(...points);
   }
-);
+
+  // Create particle geometry
+  const particleGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particles.length * 3);
+  particles.forEach((point, i) => {
+    positions[i * 3] = point.x;
+    positions[i * 3 + 1] = point.y;
+    positions[i * 3 + 2] = 0; // z can be 0 or a small random value for depth
+  });
+  particleGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3)
+  );
+
+  // Create particle material
+  const particleMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.05, // Adjust particle size as needed
+    // map: particleTexture, // Optional texture for particles
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+  });
+
+  // Create particle mesh and add to the scene
+  const particleMesh = new THREE.Points(particleGeometry, particleMaterial);
+  scene.add(particleMesh);
+  particleMesh.scale.set(0.0005, 0.0005, 0.0005);
+  const box = new THREE.Box3().setFromObject(particleMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  particleMesh.position.x += particleMesh.position.x - center.x;
+  particleMesh.position.y += particleMesh.position.y - center.y;
+  particleMesh.position.z += particleMesh.position.z - center.z;
+});
+
+// const loader = new SVGLoader();
+
+// // load a SVG resource
+// let pdGeometry = loader.load(
+//   // resource URL
+//   "./textures/particles/pdLogo.svg",
+//   // called when the resource is loaded
+//   function (data) {
+//     const paths = data.paths;
+//     const particles = [];
+//     const group = new THREE.Group();
+//     console.log("group", group);
+//     console.log(data);
+
+//     for (let i = 0; i < paths.length; i++) {
+//       const path = paths[i];
+
+//       const points = path.subPaths
+//         .flatMap((subPath) => subPath.getPoints())
+//         .filter((point) => !isNaN(point.x) && !isNaN(point.y));
+//       particles.push(...points);
+
+//       const particleGeometry = new THREE.BufferGeometry();
+//       const positions = new Float32Array(points.length * 3);
+//       points.forEach((point, i) => {
+//         positions[i * 3] = point.x;
+//         positions[i * 3 + 1] = point.y;
+//         positions[i * 3 + 2] = 0;
+//       });
+//       particleGeometry.setAttribute(
+//         "position",
+//         new THREE.BufferAttribute(positions, 3)
+//       );
+//       console.log("points", points);
+//       console.log("particles", particles);
+//       console.log("positions", positions);
+
+//       const material = new THREE.PointsMaterial({
+//         color: 0xffffff,
+//         size: 0.1,
+//         transparent: true,
+//         blending: THREE.AdditiveBlending,
+//       });
+
+//       const particleMesh = new THREE.Points(particleGeometry, material);
+
+//       scene.add(particleMesh);
+
+//       const shapes = SVGLoader.createShapes(path);
+//       console.log(path);
+
+//       for (let j = 0; j < shapes.length; j++) {
+//         const shape = shapes[j];
+//         const geometry = new THREE.ShapeGeometry(shape);
+//         const mesh = new THREE.Mesh(geometry, material);
+//         group.add(mesh);
+//       }
+//     }
+
+//     scene.add(group);
+//     //group.position.set(0, 0, 0);
+//     group.scale.set(0.0005, 0.0005, 0.0005);
+//     const box = new THREE.Box3().setFromObject(group);
+//     const center = box.getCenter(new THREE.Vector3());
+//     group.position.x += group.position.x - center.x;
+//     group.position.y += group.position.y - center.y;
+//     group.position.z += group.position.z - center.z; // Adjust scaling if necessary
+//   },
+//   // called when loading is in progresses
+//   function (xhr) {
+//     console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+//   },
+//   // called when loading has errors
+//   function (error) {
+//     console.log("An error happened", error);
+//   }
+// );
 
 //galaxy
 
@@ -162,7 +212,7 @@ const generateGalaxy = () => {
   scene.add(points);
 };
 
-generateGalaxy();
+// generateGalaxy();
 
 gui
   .add(parameters, "count")
