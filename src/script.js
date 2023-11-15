@@ -42,11 +42,12 @@ const generateGalaxy = () => {
     const i3 = i * 3; //so every three positions in the array corresponds to one vertex
 
     const radius = Math.random() * parameters.radius;
-    const branchAngle = i % parameters.branches;
-    const branches = Math.random() * parameters.branches;
-    positions[i3 + 0] = radius * branchAngle; // does x
+    const branchAngle =
+      ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+
+    positions[i3 + 0] = Math.cos(branchAngle) * radius; // does x
     positions[i3 + 1] = 0; //does y coordinate
-    positions[i3 + 2] = 0; //does z coordinate of the vertex
+    positions[i3 + 2] = Math.sin(branchAngle) * radius; //does z coordinate of the vertex
   }
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3)); //creates new attribute where 3 indicates that each vertex position is composed of 3 values
 
