@@ -18,6 +18,7 @@ parameters.radius = 5;
 parameters.branches = 3;
 parameters.spin = 1;
 parameters.randomness = 0.2;
+parameters.randomnessPower = 3;
 
 //have to use null because otherwise the parameters will not be destroyed
 let geometry = null;
@@ -44,9 +45,15 @@ const generateGalaxy = () => {
     const branchAngle =
       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    const randomX = (Math.random() - 0.5) * parameters.randomness;
-    const randomY = (Math.random() - 0.5) * parameters.randomness;
-    const randomZ = (Math.random() - 0.5) * parameters.randomness;
+    const randomX =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1);
+    const randomY =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1);
+    const randomZ =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1);
 
     positions[i3 + 0] = Math.cos(branchAngle + spinAngle) * radius + randomX; // does x
     positions[i3 + 1] = randomY; //does y coordinate
@@ -108,6 +115,13 @@ gui
   .add(parameters, "randomness")
   .min(0)
   .max(2)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "randomnessPower")
+  .min(1)
+  .max(10)
   .step(0.001)
   .onFinishChange(generateGalaxy);
 
